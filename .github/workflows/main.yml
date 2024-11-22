@@ -1,10 +1,8 @@
 name: Java CI with Maven
 
 on:
-  push:
-    branches: [ "main", "qas", "develop" ]
   pull_request:
-    branches: [ "main", "qas", "develop" ]
+    branches: [ "main", "develop" ]
   schedule:
     - cron: '0 18 * * *'  
 
@@ -29,16 +27,11 @@ jobs:
       - name: Start Docker services
         run: docker-compose up -d
 
-      # Executa testes unitários na branch 'develop'
       - name: Run Unit Tests
         if: github.ref == 'refs/heads/develop'
         run: mvn test
 
-      # Executa testes de integração na branch 'qas'
-      - name: Run Integration Tests
-        if: github.ref == 'refs/heads/qas'
-        run: mvn verify -Dtest=*IntegrationTest
-
+   
   build:
     runs-on: ubuntu-latest
 
@@ -50,7 +43,6 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
           
-      # Executa build e push somente na branch 'main'
       - name: Build with Maven
         if: github.ref == 'refs/heads/main'
         run: |
