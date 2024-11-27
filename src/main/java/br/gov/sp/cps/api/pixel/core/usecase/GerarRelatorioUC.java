@@ -1,5 +1,6 @@
 package br.gov.sp.cps.api.pixel.core.usecase;
 
+import br.gov.sp.cps.api.pixel.core.domain.dto.command.GerarRelatorioCommand;
 import br.gov.sp.cps.api.pixel.core.domain.repository.GraficoRepository;
 import br.gov.sp.cps.api.pixel.core.service.RelatorioService;
 import jakarta.transaction.Transactional;
@@ -8,16 +9,17 @@ import org.springframework.core.io.InputStreamResource;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
 public class GerarRelatorioUC {
 
     private final GraficoRepository graficoRepository;
-    private final RelatorioService relatorioService;
 
     @Transactional
-    public InputStreamResource executar() throws IOException {
-        return null;
+    public InputStreamResource executar(GerarRelatorioCommand command) throws IOException {
+        List<?> dadosRelatorio = graficoRepository.getGrafico(command);
+        return RelatorioService.dataToExcel(dadosRelatorio, command.getEixoX().getCampo(), command.getEixoY().getCampo());
     }
 }
