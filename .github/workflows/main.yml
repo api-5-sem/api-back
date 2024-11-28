@@ -37,7 +37,7 @@ jobs:
         if: github.ref == 'refs/heads/qas'
         run: |
           mvn spring-boot:run
-          docker exec -i postgres_container psql -U admin -d dash -h localhost -p 5432 -f /path/to/insert.sql
+          docker exec -i postgres_container psql -U admin -d dash -h localhost -p 5432 -f src/main/resources/bd/insertDados/flyway--dados.sql
 
 
   build:
