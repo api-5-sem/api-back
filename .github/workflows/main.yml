@@ -32,10 +32,12 @@ jobs:
         if: github.ref == 'refs/heads/develop'
         run: mvn test
 
-      # Executa as migrations na qas e teste de carga com inserts SQL
+      # Executa as migrations na qas e teste de carga com inserts SQL dps de inserir drop os inserts
       - name: Run migration
         if: github.ref == 'refs/heads/qas'
-        run: mvn spring-boot:run
+        run: |
+          mvn spring-boot:run
+          docker exec -i postgres_container psql -U admin -d dash -h localhost -p 5432 -f /path/to/insert.sql
 
 
   build:
