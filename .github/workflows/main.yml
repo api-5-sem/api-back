@@ -74,6 +74,27 @@ jobs:
         run: |
           docker build . -t springapppixel.azurecr.io/backend:${{ github.sha }}
           docker push springapppixel.azurecr.io/backend:${{ github.sha }}
+          
+      # Set the target AKS cluster.
+      - uses: Azure/aks-set-context@v1
+        with:
+          creds: '${{ secrets.AZURE_CREDENTIALS }}'
+          cluster-name: pixelCluster
+          resource-group: gr-pixel-containers
+      
+      - name: Update deployment image
+        run: |
+          sed -i 's|<IMAGE_PLACEHOLDER>|angularapp.azurecr.io/frontend:${{ github.sha }}|' k8s/deployment.yaml
+      - uses: Azure/k8s-deploy@v1
+        with:
+          manifests: |
+            k8s/deployment.yaml
+            k8s/service.yaml
+          images: |
+            angularapp.azurecr.io/frontend:${{ github.sha }}
+          imagepullsecrets: |
+            k8s-secret-front
+          namespace: ingress-basic
 
   notifyTelegramSuccess:
     runs-on: ubuntu-latest
