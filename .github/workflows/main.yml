@@ -56,28 +56,48 @@ jobs:
         if: github.ref == 'refs/heads/main'
         run: mvn clean install
 
-  docker:
+  build-and-push-acr:
+    name: Build and Push to Azure Container Registry
     runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request' && github.base_ref == 'main'
 
     steps:
-      - uses: actions/checkout@v3
-
-      - name: Set up Docker for Azure
-        uses: Azure/docker-login@v1
-        with:
-          login-server: springapppixel.azurecr.io
-          username: ${{ secrets.ACR_USERNAME }}
-          password: ${{ secrets.ACR_PASSWORD }}
-
-      - name: Build Docker Image and Push to Azure
-        if: github.ref == 'refs/heads/main'
-        run: |
-          docker build . -t springapppixel.azurecr.io/backend:${{ github.sha }}
-          docker push springapppixel.azurecr.io/backend:${{ github.sha }}
+    - uses: actions/checkout@master
+    
+    - uses: Azure/docker-login@v1
+      with:
+        login-server: springapppixel.azurecr.io
+        username: ${{ secrets.ACR_USERNAME }}
+        password: ${{ secrets.ACR_PASSWORD }}
+    
+    - run: |
+        docker build . -t springapppixel.azurecr.io/backend:${{ github.sha }}
+        docker push springapppixel.azurecr.io/backend:${{ github.sha }}
+      
+    # Set the target AKS cluster.
+    - uses: Azure/aks-set-context@v1
+      with:
+        creds: '${{ secrets.AZURE_CREDENTIALS }}'
+        cluster-name: pixelCluster
+        resource-group: gr-pixel-containers
+      
+    - name: Update deployment image
+      run: |
+        sed -i 's|<IMAGE_PLACEHOLDER>|springapppixel.azurecr.io/backend:${{ github.sha }}|' k8s/deployment.yaml
+    - uses: Azure/k8s-deploy@v1
+      with:
+        manifests: |
+          k8s/deployment.yaml
+          k8s/service.yaml
+        images: |
+          springapppixel.azurecr.io/backend:${{ github.sha }}
+        imagepullsecrets: |
+          k8s-secret
+        namespace: ingress-basic
 
   notifyTelegramSuccess:
     runs-on: ubuntu-latest
-    needs: [build, test, docker]
+    needs: [build, test, build-and-push-acr]
     if: success()
     steps:
       - name: Send Telegram Notification (Success)
@@ -93,7 +113,7 @@ jobs:
 
   notifyTelegramFailure:
     runs-on: ubuntu-latest
-    needs: [build, test, docker]
+    needs: [build, test, build-and-push-acr]
     if: failure()
     steps:
       - name: Send Telegram Notification (Failure)
