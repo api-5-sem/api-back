@@ -92,7 +92,7 @@ jobs:
         images: |
           springapppixel.azurecr.io/backend:${{ github.sha }}
         imagepullsecrets: |
-          k8s-secret-front
+          k8s-secret
         namespace: ingress-basic
 
   notifyTelegramSuccess:
